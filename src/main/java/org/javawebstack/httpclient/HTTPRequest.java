@@ -9,6 +9,7 @@ import java.io.OutputStream;
 import java.net.HttpURLConnection;
 import java.net.URL;
 import java.nio.charset.StandardCharsets;
+import java.util.Base64;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -65,6 +66,21 @@ public class HTTPRequest {
         return header("Authorization", type + " " + value);
     }
 
+    public HTTPRequest basicAuthorization(String username, String password){
+        return authorization("Basic", Base64.getEncoder().encodeToString((username+":"+password).getBytes()));
+    }
+
+    /*
+    * TODO: Currently not supporting nested form-data
+    * */
+    public HTTPRequest formBody(Map<String, String> data){
+        return body(new QueryString(data).toString());
+    }
+
+    public HTTPRequest formBody(QueryString query) {
+        return body(query.toString());
+    }
+
     public HTTPRequest bearer(String token){
         return authorization("Bearer", token);
     }
@@ -78,11 +94,14 @@ public class HTTPRequest {
     }
 
     public byte[] bytes(){
+        if (requestBody == null)
+            execute();
+
         return responseBody;
     }
 
     public String string(){
-        return new String(responseBody, StandardCharsets.UTF_8);
+        return new String(bytes(), StandardCharsets.UTF_8);
     }
 
     public <T> T json(Class<T> type){
