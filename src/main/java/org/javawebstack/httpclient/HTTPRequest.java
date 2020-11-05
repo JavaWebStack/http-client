@@ -21,7 +21,7 @@ public class HTTPRequest {
     private final QueryString query = new QueryString();
     private final Map<String, String> requestHeaders = new HashMap<>();
     private byte[] requestBody;
-    private Map<String, String> responseHeaders = new HashMap<>();
+    private final Map<String, String> responseHeaders = new HashMap<>();
     private byte[] responseBody;
     private int status;
 
@@ -70,9 +70,6 @@ public class HTTPRequest {
         return authorization("Basic", Base64.getEncoder().encodeToString((username+":"+password).getBytes()));
     }
 
-    /*
-    * TODO: Currently not supporting nested form-data
-    * */
     public HTTPRequest formBody(Map<String, String> data){
         return body(new QueryString(data).toString());
     }
@@ -121,7 +118,7 @@ public class HTTPRequest {
     public HTTPRequest execute(){
         HttpURLConnection conn = null;
         try{
-            URL theUrl = new URL(client.getBaseUrl() + (path.startsWith("/") ? "" : "/") + path + (query.size() > 0 ? "?" + query.toString() : ""));
+            URL theUrl = new URL(client.getBaseUrl() + ((path.startsWith("/") || path.startsWith("http://") || path.startsWith("https://")) ? "" : "/") + path + (query.size() > 0 ? "?" + query.toString() : ""));
             conn = (HttpURLConnection) theUrl.openConnection();
             conn.setReadTimeout(client.getTimeout());
             conn.setConnectTimeout(5000);
@@ -147,10 +144,12 @@ public class HTTPRequest {
             }else{
                 this.responseBody = readAll(conn.getInputStream());
             }
+            return this;
         }catch(Exception e){
             try {
                 this.responseBody = readAll(conn.getErrorStream());
-            }catch(IOException | NullPointerException ex){}
+                return this;
+            }catch(IOException | NullPointerException ignored){}
         }
         this.responseBody = new byte[0];
         return this;
