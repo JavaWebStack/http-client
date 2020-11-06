@@ -177,4 +177,8 @@ public class HTTPRequest {
         is.close();
         return baos.toByteArray();
     }
+
+    public String toString(){
+        return string();
+    }
 }
