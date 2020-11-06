@@ -120,6 +120,13 @@ public class HTTPRequest {
         return (T) responseTransformer.transform(this);
     }
 
+    /*
+    * Requires a transformer in the HttpClient
+    * */
+    public <T> T transform(Class<T> type){
+        return (T) client.getTransformer().transform(this);
+    }
+
     public HTTPRequest execute(){
         HttpURLConnection conn = null;
         try{
