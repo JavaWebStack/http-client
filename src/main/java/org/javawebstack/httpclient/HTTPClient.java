@@ -3,6 +3,7 @@ package org.javawebstack.httpclient;
 import com.google.gson.FieldNamingPolicy;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
+import org.javawebstack.httpclient.interfaces.BeforeRequest;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -17,6 +18,14 @@ public class HTTPClient {
     private int timeout = 5000;
     private String baseUrl = "";
     private Map<String, String> defaultHeaders = new HashMap<>();
+
+    private BeforeRequest beforeInterceptor;
+
+    public HTTPClient(String baseUrl) {
+        this.baseUrl = baseUrl;
+    }
+
+    public HTTPClient() { }
 
     public HTTPClient gson(Gson gson){
         this.gson = gson;
@@ -75,6 +84,15 @@ public class HTTPClient {
 
     public HTTPRequest get(String path){
         return request("GET", path);
+    }
+
+    public HTTPClient before(BeforeRequest requestInterceptor){
+        beforeInterceptor = requestInterceptor;
+        return this;
+    }
+
+    public BeforeRequest getBeforeInterceptor() {
+        return beforeInterceptor;
     }
 
     public HTTPRequest post(String path){

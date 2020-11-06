@@ -1,5 +1,6 @@
 package org.javawebstack.httpclient;
 
+import org.javawebstack.httpclient.interfaces.ResponseTransformer;
 import org.javawebstack.querystring.QueryString;
 
 import java.io.ByteArrayOutputStream;
@@ -115,6 +116,10 @@ public class HTTPRequest {
         return responseHeaders.get(key);
     }
 
+    public <T> T transform(ResponseTransformer responseTransformer, Class<T> type){
+        return (T) responseTransformer.transform(this);
+    }
+
     public HTTPRequest execute(){
         HttpURLConnection conn = null;
         try{
@@ -127,6 +132,11 @@ public class HTTPRequest {
             for(String k : requestHeaders.keySet()){
                 conn.setRequestProperty(k, requestHeaders.get(k));
             }
+
+            if (client.getBeforeInterceptor() != null)
+                client.getBeforeInterceptor().doBefore(this);
+
+
             if(requestBody!=null){
                 conn.setDoOutput(true);
                 OutputStream os = conn.getOutputStream();
@@ -167,5 +177,4 @@ public class HTTPRequest {
         is.close();
         return baos.toByteArray();
     }
-
 }
