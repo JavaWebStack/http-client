@@ -92,7 +92,7 @@ public class HTTPRequest {
     }
 
     public byte[] bytes(){
-        if (requestBody == null)
+        if (responseBody == null)
             execute();
 
         return responseBody;
