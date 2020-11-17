@@ -1,8 +1,8 @@
 package org.javawebstack.httpclient;
 
-import com.google.gson.FieldNamingPolicy;
-import com.google.gson.Gson;
-import com.google.gson.GsonBuilder;
+import org.javawebstack.graph.GraphElement;
+import org.javawebstack.graph.GraphMapper;
+import org.javawebstack.graph.NamingPolicy;
 import org.javawebstack.httpclient.interceptor.BeforeRequestInterceptor;
 import org.javawebstack.httpclient.interceptor.ResponseTransformer;
 
@@ -11,11 +11,8 @@ import java.util.Map;
 
 public class HTTPClient {
 
-    private Gson gson = new GsonBuilder()
-            .setDateFormat("yyyy-MM-dd HH:mm:ss")
-            .disableHtmlEscaping()
-            .setFieldNamingPolicy(FieldNamingPolicy.LOWER_CASE_WITH_UNDERSCORES)
-            .create();
+    private GraphMapper graphMapper = new GraphMapper()
+            .setNamingPolicy(NamingPolicy.SNAKE_CASE);
     private int timeout = 5000;
     private String baseUrl = "";
     private Map<String, String> defaultHeaders = new HashMap<>();
@@ -30,13 +27,13 @@ public class HTTPClient {
 
     public HTTPClient() { }
 
-    public HTTPClient gson(Gson gson){
-        this.gson = gson;
+    public HTTPClient graphMapper(GraphMapper mapper){
+        this.graphMapper = mapper;
         return this;
     }
 
-    public Gson getGson() {
-        return gson;
+    public GraphMapper getGraphMapper(){
+        return graphMapper;
     }
 
     public HTTPClient timeout(int timeout){
@@ -122,7 +119,7 @@ public class HTTPClient {
     }
 
     public HTTPRequest post(String path, Object body){
-        return post(path).jsonBody(body);
+        return post(path).jsonBody((GraphElement) body);
     }
 
     public HTTPRequest put(String path){

@@ -1,5 +1,6 @@
 package org.javawebstack.httpclient;
 
+import org.javawebstack.graph.GraphElement;
 import org.javawebstack.httpclient.interceptor.ResponseTransformer;
 import org.javawebstack.querystring.QueryString;
 
@@ -75,12 +76,20 @@ public class HTTPRequest {
         return authorization("Basic", Base64.getEncoder().encodeToString((username+":"+password).getBytes()));
     }
 
-    public HTTPRequest formBody(Map<String, String> data){
-        return body(new QueryString(data).toString());
+    public HTTPRequest formBodyString(QueryString query) {
+        return body(query.toString()).contentType("application/x-www-form-urlencoded");
     }
 
-    public HTTPRequest formBody(QueryString query) {
-        return body(query.toString());
+    public HTTPRequest formBody(Object object){
+        if(object instanceof QueryString)
+            return formBodyString((QueryString) object);
+        if(object instanceof GraphElement)
+            return formBodyElement((GraphElement) object);
+        return formBodyElement(client.getGraphMapper().toGraph(object));
+    }
+
+    public HTTPRequest formBodyElement(GraphElement element){
+        return body(element.toJsonString()).contentType("application/x-www-form-urlencoded");
     }
 
     public HTTPRequest bearer(String token){
@@ -88,7 +97,13 @@ public class HTTPRequest {
     }
 
     public HTTPRequest jsonBody(Object object){
-        return body(client.getGson().toJson(object)).contentType("application/json");
+        if(object instanceof GraphElement)
+            return jsonBodyElement((GraphElement) object);
+        return jsonBodyElement(client.getGraphMapper().toGraph(object));
+    }
+
+    public HTTPRequest jsonBodyElement(GraphElement element){
+        return body(element.toJsonString()).contentType("application/json");
     }
 
     public int status(){
@@ -106,14 +121,23 @@ public class HTTPRequest {
         return new String(bytes(), StandardCharsets.UTF_8);
     }
 
-    public <T> T json(Class<T> type){
+    public <T> T object(Class<T> type){
         if(type == null)
             return null;
         if(type.equals(byte[].class))
             return (T) responseBody;
         if(type.equals(String.class))
             return (T) string();
-        return client.getGson().fromJson(string(), type);
+        return client.getGraphMapper().fromGraph(graph(), type);
+    }
+
+    public GraphElement graph(){
+        String contentType = header("Content-Type");
+        switch (contentType){
+            case "application/x-www-form-urlencoded":
+                GraphElement.fromFormData(string());
+        }
+        return GraphElement.fromJson(string());
     }
 
     public String header(String key){
