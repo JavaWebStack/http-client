@@ -3,6 +3,8 @@ package org.javawebstack.httpclient;
 import com.google.gson.FieldNamingPolicy;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
+import org.javawebstack.httpclient.interfaces.BeforeRequest;
+import org.javawebstack.httpclient.interfaces.ResponseTransformer;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -17,6 +19,15 @@ public class HTTPClient {
     private int timeout = 5000;
     private String baseUrl = "";
     private Map<String, String> defaultHeaders = new HashMap<>();
+    private ResponseTransformer transformer;
+
+    private BeforeRequest beforeInterceptor;
+
+    public HTTPClient(String baseUrl) {
+        this.baseUrl = baseUrl;
+    }
+
+    public HTTPClient() { }
     private Map<String, String> defaultQuery = new HashMap<>();
 
     public HTTPClient gson(Gson gson){
@@ -80,6 +91,11 @@ public class HTTPClient {
         return this;
     }
 
+    public HTTPClient transformer(ResponseTransformer responseTransformer){
+        transformer = responseTransformer;
+        return this;
+    }
+
     public String getBaseUrl() {
         return baseUrl;
     }
@@ -90,6 +106,15 @@ public class HTTPClient {
 
     public HTTPRequest get(String path){
         return request("GET", path);
+    }
+
+    public HTTPClient before(BeforeRequest requestInterceptor){
+        beforeInterceptor = requestInterceptor;
+        return this;
+    }
+
+    public BeforeRequest getBeforeInterceptor() {
+        return beforeInterceptor;
     }
 
     public HTTPRequest post(String path){
@@ -112,4 +137,7 @@ public class HTTPClient {
         return request("DELETE", path);
     }
 
+    public ResponseTransformer getTransformer() {
+        return transformer;
+    }
 }
