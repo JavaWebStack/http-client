@@ -17,6 +17,7 @@ public class HTTPClient {
     private int timeout = 5000;
     private String baseUrl = "";
     private Map<String, String> defaultHeaders = new HashMap<>();
+    private Map<String, String> defaultQuery = new HashMap<>();
 
     public HTTPClient gson(Gson gson){
         this.gson = gson;
@@ -41,8 +42,22 @@ public class HTTPClient {
         return this;
     }
 
+    public HTTPClient query(String key, String value){
+        defaultQuery.put(key, value);
+        return this;
+    }
+
+    public Map<String, String> getDefaultQuery() {
+        return defaultQuery;
+    }
+
     public Map<String, String> getDefaultHeaders() {
         return defaultHeaders;
+    }
+
+    public HTTPClient setDefaultQuery(Map<String, String> defaultQuery) {
+        this.defaultQuery = defaultQuery;
+        return this;
     }
 
     public HTTPClient headers(Map<String, String> defaultHeaders){

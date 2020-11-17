@@ -29,6 +29,10 @@ public class HTTPRequest {
         this.client = client;
         this.method = method;
         this.path = path;
+        for(String key : client.getDefaultQuery().keySet())
+            query(key, client.getDefaultQuery().get(key));
+        for(String key : client.getDefaultHeaders().keySet())
+            header(key, client.getDefaultHeaders().get(key));
     }
 
     public HTTPRequest header(String key, String value){
