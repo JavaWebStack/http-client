@@ -3,8 +3,8 @@ package org.javawebstack.httpclient;
 import com.google.gson.FieldNamingPolicy;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
-import org.javawebstack.httpclient.interfaces.BeforeRequest;
-import org.javawebstack.httpclient.interfaces.ResponseTransformer;
+import org.javawebstack.httpclient.interceptor.BeforeRequestInterceptor;
+import org.javawebstack.httpclient.interceptor.ResponseTransformer;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -19,16 +19,16 @@ public class HTTPClient {
     private int timeout = 5000;
     private String baseUrl = "";
     private Map<String, String> defaultHeaders = new HashMap<>();
-    private ResponseTransformer transformer;
+    private Map<String, String> defaultQuery = new HashMap<>();
 
-    private BeforeRequest beforeInterceptor;
+    private ResponseTransformer responseTransformer;
+    private BeforeRequestInterceptor beforeInterceptor;
 
     public HTTPClient(String baseUrl) {
         this.baseUrl = baseUrl;
     }
 
     public HTTPClient() { }
-    private Map<String, String> defaultQuery = new HashMap<>();
 
     public HTTPClient gson(Gson gson){
         this.gson = gson;
@@ -92,7 +92,7 @@ public class HTTPClient {
     }
 
     public HTTPClient transformer(ResponseTransformer responseTransformer){
-        transformer = responseTransformer;
+        responseTransformer = responseTransformer;
         return this;
     }
 
@@ -108,12 +108,12 @@ public class HTTPClient {
         return request("GET", path);
     }
 
-    public HTTPClient before(BeforeRequest requestInterceptor){
+    public HTTPClient before(BeforeRequestInterceptor requestInterceptor){
         beforeInterceptor = requestInterceptor;
         return this;
     }
 
-    public BeforeRequest getBeforeInterceptor() {
+    public BeforeRequestInterceptor getBeforeInterceptor() {
         return beforeInterceptor;
     }
 
@@ -137,7 +137,7 @@ public class HTTPClient {
         return request("DELETE", path);
     }
 
-    public ResponseTransformer getTransformer() {
-        return transformer;
+    public ResponseTransformer getResponseTransformer() {
+        return responseTransformer;
     }
 }

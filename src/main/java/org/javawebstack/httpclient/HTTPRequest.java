@@ -1,6 +1,6 @@
 package org.javawebstack.httpclient;
 
-import org.javawebstack.httpclient.interfaces.ResponseTransformer;
+import org.javawebstack.httpclient.interceptor.ResponseTransformer;
 import org.javawebstack.querystring.QueryString;
 
 import java.io.ByteArrayOutputStream;

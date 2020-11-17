@@ -1,4 +1,4 @@
-package org.javawebstack.httpclient.interfaces;
+package org.javawebstack.httpclient.interceptor;
 
 import org.javawebstack.httpclient.HTTPRequest;
 
