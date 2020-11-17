@@ -128,7 +128,7 @@ public class HTTPRequest {
     * Requires a transformer in the HttpClient
     * */
     public <T> T transform(Class<T> type){
-        return (T) client.getTransformer().transform(this);
+        return (T) client.getResponseTransformer().transform(this);
     }
 
     public HTTPRequest execute(){
