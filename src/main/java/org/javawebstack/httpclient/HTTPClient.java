@@ -119,7 +119,7 @@ public class HTTPClient {
     }
 
     public HTTPRequest post(String path, Object body){
-        return post(path).jsonBody((GraphElement) body);
+        return post(path).jsonBody(body);
     }
 
     public HTTPRequest put(String path){
