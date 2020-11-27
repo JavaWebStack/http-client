@@ -133,6 +133,8 @@ public class HTTPRequest {
 
     public GraphElement graph(){
         String contentType = header("Content-Type");
+        if(contentType == null)
+            contentType = "application/json";
         switch (contentType){
             case "application/x-www-form-urlencoded":
                 GraphElement.fromFormData(string());
