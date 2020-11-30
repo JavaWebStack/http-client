@@ -89,7 +89,7 @@ public class HTTPClient {
     }
 
     public HTTPClient transformer(ResponseTransformer responseTransformer){
-        responseTransformer = responseTransformer;
+        this.responseTransformer = responseTransformer;
         return this;
     }
 
