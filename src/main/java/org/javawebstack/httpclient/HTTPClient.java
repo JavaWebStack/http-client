@@ -22,6 +22,7 @@ public class HTTPClient {
     private BeforeRequestInterceptor beforeInterceptor;
 
     private boolean debug = false;
+    private boolean sslVerification = true;
 
     public HTTPClient(String baseUrl) {
         this.baseUrl = baseUrl;
@@ -35,6 +36,14 @@ public class HTTPClient {
 
     public boolean isDebug(){
         return debug;
+    }
+
+    public void setSSLVerification(boolean sslVerification){
+        this.sslVerification = sslVerification;
+    }
+
+    public boolean isSSLVerification(){
+        return this.sslVerification;
     }
 
     public HTTPClient graphMapper(GraphMapper mapper){

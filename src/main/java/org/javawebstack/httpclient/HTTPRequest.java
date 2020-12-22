@@ -4,13 +4,14 @@ import org.javawebstack.graph.GraphElement;
 import org.javawebstack.httpclient.interceptor.ResponseTransformer;
 import org.javawebstack.querystring.QueryString;
 
+import javax.net.ssl.*;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
-import java.net.HttpURLConnection;
-import java.net.URL;
+import java.net.*;
 import java.nio.charset.StandardCharsets;
+import java.security.cert.X509Certificate;
 import java.util.Base64;
 import java.util.HashMap;
 import java.util.Map;
@@ -162,6 +163,24 @@ public class HTTPRequest {
         try{
             URL theUrl = new URL(client.getBaseUrl() + ((path.startsWith("/") || path.startsWith("http://") || path.startsWith("https://")) ? "" : "/") + path + (query.size() > 0 ? "?" + query.toString() : ""));
             conn = (HttpURLConnection) theUrl.openConnection();
+            if(!client.isSSLVerification() && conn instanceof HttpsURLConnection){
+                HttpsURLConnection httpsConn = (HttpsURLConnection) conn;
+                TrustManager[] trustAllCerts = new TrustManager[] {
+                        new X509TrustManager() {
+                            public java.security.cert.X509Certificate[] getAcceptedIssuers() {
+                                return null;
+                            }
+                            public void checkClientTrusted(X509Certificate[] certs, String authType) {
+                            }
+                            public void checkServerTrusted(X509Certificate[] certs, String authType) {
+                            }
+                        }
+                };
+                SSLContext sc = SSLContext.getInstance("SSL");
+                sc.init(null, trustAllCerts, new java.security.SecureRandom());
+                httpsConn.setSSLSocketFactory(sc.getSocketFactory());
+                httpsConn.setHostnameVerifier((hostname, session) -> true);
+            }
             conn.setReadTimeout(client.getTimeout());
             conn.setConnectTimeout(5000);
             conn.setRequestMethod(method);
