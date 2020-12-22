@@ -193,10 +193,15 @@ public class HTTPRequest {
             }
             return this;
         }catch(Exception e){
+            if(client.isDebug())
+                e.printStackTrace();
             try {
                 this.responseBody = readAll(conn.getErrorStream());
                 return this;
-            }catch(IOException | NullPointerException ignored){}
+            }catch(IOException | NullPointerException ex){
+                if(client.isDebug())
+                    ex.printStackTrace();
+            }
         }
         this.responseBody = new byte[0];
         return this;

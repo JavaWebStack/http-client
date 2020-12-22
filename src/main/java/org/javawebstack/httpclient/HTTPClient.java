@@ -21,11 +21,21 @@ public class HTTPClient {
     private ResponseTransformer responseTransformer;
     private BeforeRequestInterceptor beforeInterceptor;
 
+    private boolean debug = false;
+
     public HTTPClient(String baseUrl) {
         this.baseUrl = baseUrl;
     }
 
     public HTTPClient() { }
+
+    public void debug(){
+        this.debug = true;
+    }
+
+    public boolean isDebug(){
+        return debug;
+    }
 
     public HTTPClient graphMapper(GraphMapper mapper){
         this.graphMapper = mapper;
