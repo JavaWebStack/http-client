@@ -12,9 +12,7 @@ import java.io.OutputStream;
 import java.net.*;
 import java.nio.charset.StandardCharsets;
 import java.security.cert.X509Certificate;
-import java.util.Base64;
-import java.util.HashMap;
-import java.util.Map;
+import java.util.*;
 
 public class HTTPRequest {
 
@@ -25,6 +23,8 @@ public class HTTPRequest {
     private final Map<String, String[]> requestHeaders = new HashMap<>();
     private byte[] requestBody;
     private final Map<String, String[]> responseHeaders = new HashMap<>();
+    private final List<HttpCookie> requestCookies = new ArrayList<>();
+    private final List<HttpCookie> responseCookies = new ArrayList<>();
     private byte[] responseBody;
     private int status;
 
@@ -36,6 +36,18 @@ public class HTTPRequest {
             query(key, client.getDefaultQuery().get(key));
         for(String key : client.getDefaultHeaders().keySet())
             header(key, client.getDefaultHeaders().get(key));
+    }
+
+    public void cookie(HttpCookie cookie){
+        requestCookies.add(cookie);
+    }
+
+    public List<HttpCookie> cookies(){
+        return responseCookies;
+    }
+
+    public HttpCookie cookie(String name){
+        return responseCookies.stream().filter(c -> c.getName().equalsIgnoreCase(name)).findFirst().orElse(null);
     }
 
     public HTTPRequest header(String key, String... values){
@@ -196,6 +208,15 @@ public class HTTPRequest {
                     conn.addRequestProperty(k, v);
             }
 
+            List<String> reqCookies = new ArrayList<>();
+            for(HttpCookie cookie : client.getDefaultCookies())
+                reqCookies.add(cookie.getName()+"="+cookie.getValue());
+            for(HttpCookie cookie : requestCookies)
+                reqCookies.add(cookie.getName()+"="+cookie.getValue());
+
+            if(reqCookies.size() > 0)
+                conn.addRequestProperty("Cookie", String.join("; ", reqCookies));
+
             if (client.getBeforeInterceptor() != null)
                 client.getBeforeInterceptor().doBefore(this);
 
@@ -209,8 +230,16 @@ public class HTTPRequest {
             }
             status = conn.getResponseCode();
             conn.getHeaderFields().forEach((k,v) -> {
-                responseHeaders.put(k, v.toArray(new String[0]));
+                responseHeaders.put(k.toLowerCase(Locale.ROOT), v.toArray(new String[0]));
             });
+
+            for(String value : headers("set-cookie"))
+                responseCookies.addAll(HttpCookie.parse("set-cookie: "+value));
+            for(String value : headers("set-cookie2"))
+                responseCookies.addAll(HttpCookie.parse("set-cookie2: "+value));
+            if(client.isAutoCookies())
+                cookies().forEach(client::cookie);
+
             if(status>299){
                 this.responseBody = readAll(conn.getErrorStream());
             }else{

@@ -5,8 +5,8 @@ import org.javawebstack.graph.NamingPolicy;
 import org.javawebstack.httpclient.interceptor.BeforeRequestInterceptor;
 import org.javawebstack.httpclient.interceptor.ResponseTransformer;
 
-import java.util.HashMap;
-import java.util.Map;
+import java.net.HttpCookie;
+import java.util.*;
 
 public class HTTPClient {
 
@@ -16,12 +16,14 @@ public class HTTPClient {
     private String baseUrl = "";
     private Map<String, String[]> defaultHeaders = new HashMap<>();
     private Map<String, String> defaultQuery = new HashMap<>();
+    private List<HttpCookie> defaultCookies = new ArrayList<>();
 
     private ResponseTransformer responseTransformer;
     private BeforeRequestInterceptor beforeInterceptor;
 
     private boolean debug = false;
     private boolean sslVerification = true;
+    private boolean autoCookies = false;
 
     public HTTPClient(String baseUrl) {
         this.baseUrl = baseUrl;
@@ -35,6 +37,14 @@ public class HTTPClient {
 
     public boolean isDebug(){
         return debug;
+    }
+
+    public void autoCookies(){
+        autoCookies = true;
+    }
+
+    public boolean isAutoCookies(){
+        return autoCookies;
     }
 
     public void setSSLVerification(boolean sslVerification){
@@ -70,6 +80,28 @@ public class HTTPClient {
 
     public HTTPClient query(String key, String value){
         defaultQuery.put(key, value);
+        return this;
+    }
+
+    public HTTPClient cookie(HttpCookie cookie){
+        removeCookie(cookie.getName());
+        defaultCookies.add(cookie);
+        return this;
+    }
+
+    public void removeCookie(String name){
+        for(HttpCookie cookie : new HashSet<>(defaultCookies)){
+            if(cookie.getName().equalsIgnoreCase(name))
+                defaultCookies.remove(cookie);
+        }
+    }
+
+    public List<HttpCookie> getDefaultCookies(){
+        return defaultCookies;
+    }
+
+    public HTTPClient setDefaultCookies(List<HttpCookie> cookies){
+        this.defaultCookies = cookies;
         return this;
     }
 
