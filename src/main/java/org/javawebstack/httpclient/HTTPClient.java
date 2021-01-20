@@ -1,6 +1,5 @@
 package org.javawebstack.httpclient;
 
-import org.javawebstack.graph.GraphElement;
 import org.javawebstack.graph.GraphMapper;
 import org.javawebstack.graph.NamingPolicy;
 import org.javawebstack.httpclient.interceptor.BeforeRequestInterceptor;
@@ -15,7 +14,7 @@ public class HTTPClient {
             .setNamingPolicy(NamingPolicy.SNAKE_CASE);
     private int timeout = 5000;
     private String baseUrl = "";
-    private Map<String, String> defaultHeaders = new HashMap<>();
+    private Map<String, String[]> defaultHeaders = new HashMap<>();
     private Map<String, String> defaultQuery = new HashMap<>();
 
     private ResponseTransformer responseTransformer;
@@ -64,8 +63,8 @@ public class HTTPClient {
         return timeout;
     }
 
-    public HTTPClient header(String key, String value){
-        defaultHeaders.put(key, value);
+    public HTTPClient header(String key, String... values){
+        defaultHeaders.put(key, values);
         return this;
     }
 
@@ -78,7 +77,7 @@ public class HTTPClient {
         return defaultQuery;
     }
 
-    public Map<String, String> getDefaultHeaders() {
+    public Map<String, String[]> getDefaultHeaders() {
         return defaultHeaders;
     }
 
@@ -87,7 +86,7 @@ public class HTTPClient {
         return this;
     }
 
-    public HTTPClient headers(Map<String, String> defaultHeaders){
+    public HTTPClient headers(Map<String, String[]> defaultHeaders){
         this.defaultHeaders = defaultHeaders;
         return this;
     }

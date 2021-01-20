@@ -22,9 +22,9 @@ public class HTTPRequest {
     private final String path;
     private final String method;
     private final QueryString query = new QueryString();
-    private final Map<String, String> requestHeaders = new HashMap<>();
+    private final Map<String, String[]> requestHeaders = new HashMap<>();
     private byte[] requestBody;
-    private final Map<String, String> responseHeaders = new HashMap<>();
+    private final Map<String, String[]> responseHeaders = new HashMap<>();
     private byte[] responseBody;
     private int status;
 
@@ -38,8 +38,8 @@ public class HTTPRequest {
             header(key, client.getDefaultHeaders().get(key));
     }
 
-    public HTTPRequest header(String key, String value){
-        requestHeaders.put(key, value);
+    public HTTPRequest header(String key, String... values){
+        requestHeaders.put(key, values);
         return this;
     }
 
@@ -144,7 +144,13 @@ public class HTTPRequest {
     }
 
     public String header(String key){
-        return responseHeaders.get(key);
+        String[] values = headers(key);
+        return values.length < 1 ? null : values[0];
+    }
+
+    public String[] headers(String key){
+        String[] values = responseHeaders.get(key);
+        return values == null ? new String[0] : values;
     }
 
     public <T> T transform(ResponseTransformer responseTransformer, Class<T> type){
@@ -186,7 +192,8 @@ public class HTTPRequest {
             conn.setRequestMethod(method);
             conn.setDoInput(true);
             for(String k : requestHeaders.keySet()){
-                conn.setRequestProperty(k, requestHeaders.get(k));
+                for(String v : requestHeaders.get(k))
+                    conn.addRequestProperty(k, v);
             }
 
             if (client.getBeforeInterceptor() != null)
@@ -202,8 +209,7 @@ public class HTTPRequest {
             }
             status = conn.getResponseCode();
             conn.getHeaderFields().forEach((k,v) -> {
-                if(v.size()>0)
-                    responseHeaders.put(k, v.get(v.size()-1));
+                responseHeaders.put(k, v.toArray(new String[0]));
             });
             if(status>299){
                 this.responseBody = readAll(conn.getErrorStream());
