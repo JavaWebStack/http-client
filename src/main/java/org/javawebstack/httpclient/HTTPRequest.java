@@ -1,8 +1,7 @@
 package org.javawebstack.httpclient;
 
-import org.javawebstack.graph.GraphElement;
-import org.javawebstack.httpclient.interceptor.ResponseTransformer;
-import org.javawebstack.querystring.QueryString;
+import org.javawebstack.abstractdata.AbstractElement;
+import org.javawebstack.abstractdata.util.QueryString;
 
 import javax.net.ssl.*;
 import java.io.ByteArrayOutputStream;
@@ -46,7 +45,7 @@ public class HTTPRequest {
         return responseCookies;
     }
 
-    public HttpCookie cookie(String name){
+    public HttpCookie cookie(String name) {
         return responseCookies.stream().filter(c -> c.getName().equalsIgnoreCase(name)).findFirst().orElse(null);
     }
 
@@ -85,23 +84,27 @@ public class HTTPRequest {
         return header("Authorization", type + " " + value);
     }
 
-    public HTTPRequest basicAuthorization(String username, String password){
-        return authorization("Basic", Base64.getEncoder().encodeToString((username+":"+password).getBytes()));
+    public HTTPRequest basicAuth(String username, String password) {
+        return authorization("Basic", Base64.getEncoder().encodeToString((username+":"+password).getBytes(StandardCharsets.UTF_8)));
     }
 
     public HTTPRequest formBodyString(QueryString query) {
-        return body(query.toString()).contentType("application/x-www-form-urlencoded");
+        return formBodyString(query.toString());
     }
 
-    public HTTPRequest formBody(Object object){
+    public HTTPRequest formBodyString(String query) {
+        return body(query).contentType("application/x-www-form-urlencoded");
+    }
+
+    public HTTPRequest formBody(Object object) {
         if(object instanceof QueryString)
             return formBodyString((QueryString) object);
-        if(object instanceof GraphElement)
-            return formBodyElement((GraphElement) object);
-        return formBodyElement(client.getGraphMapper().toGraph(object));
+        if(object instanceof AbstractElement)
+            return formBodyElement((AbstractElement) object);
+        return formBodyElement(client.getAbstractMapper().toAbstract(object));
     }
 
-    public HTTPRequest formBodyElement(GraphElement element){
+    public HTTPRequest formBodyElement(AbstractElement element) {
         return body(element.toJsonString()).contentType("application/x-www-form-urlencoded");
     }
 
@@ -109,21 +112,23 @@ public class HTTPRequest {
         return authorization("Bearer", token);
     }
 
-    public HTTPRequest jsonBody(Object object){
-        if(object instanceof GraphElement)
-            return jsonBodyElement((GraphElement) object);
-        return jsonBodyElement(client.getGraphMapper().toGraph(object));
+    public HTTPRequest jsonBody(Object object) {
+        if(object instanceof AbstractElement)
+            return jsonBodyElement((AbstractElement) object);
+        return jsonBodyElement(client.getAbstractMapper().toAbstract(object));
     }
 
-    public HTTPRequest jsonBodyElement(GraphElement element){
+    public HTTPRequest jsonBodyElement(AbstractElement element) {
         return body(element.toJsonString()).contentType("application/json");
     }
 
-    public int status(){
+    public int status() {
+        if (responseBody == null)
+            execute();
         return status;
     }
 
-    public byte[] bytes(){
+    public byte[] bytes() {
         if (responseBody == null)
             execute();
 
@@ -134,49 +139,38 @@ public class HTTPRequest {
         return new String(bytes(), StandardCharsets.UTF_8);
     }
 
-    public <T> T object(Class<T> type){
+    public <T> T object(Class<T> type) {
         if(type == null)
             return null;
         if(type.equals(byte[].class))
             return (T) responseBody;
         if(type.equals(String.class))
             return (T) string();
-        return client.getGraphMapper().fromGraph(graph(), type);
+        return client.getAbstractMapper().fromAbstract(data(), type);
     }
 
-    public GraphElement graph(){
+    public AbstractElement data() {
         String contentType = header("Content-Type");
         if(contentType == null)
             contentType = "application/json";
         switch (contentType){
             case "application/x-www-form-urlencoded":
-                GraphElement.fromFormData(string());
+                AbstractElement.fromFormData(string());
         }
-        return GraphElement.fromJson(string());
+        return AbstractElement.fromJson(string());
     }
 
-    public String header(String key){
+    public String header(String key) {
         String[] values = headers(key);
         return values.length < 1 ? null : values[0];
     }
 
-    public String[] headers(String key){
+    public String[] headers(String key) {
         String[] values = responseHeaders.get(key);
         return values == null ? new String[0] : values;
     }
 
-    public <T> T transform(ResponseTransformer responseTransformer, Class<T> type){
-        return (T) responseTransformer.transform(this);
-    }
-
-    /*
-    * Requires a transformer in the HttpClient
-    * */
-    public <T> T transform(Class<T> type){
-        return (T) client.getResponseTransformer().transform(this);
-    }
-
-    public HTTPRequest execute(){
+    public HTTPRequest execute() {
         HttpURLConnection conn = null;
         try{
             URL theUrl = new URL(client.getBaseUrl() + ((path.startsWith("/") || path.startsWith("http://") || path.startsWith("https://")) ? "" : "/") + path + (query.size() > 0 ? "?" + query.toString() : ""));

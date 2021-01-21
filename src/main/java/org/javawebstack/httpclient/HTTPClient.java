@@ -1,16 +1,16 @@
 package org.javawebstack.httpclient;
 
-import org.javawebstack.graph.GraphMapper;
-import org.javawebstack.graph.NamingPolicy;
+import org.javawebstack.abstractdata.AbstractMapper;
+import org.javawebstack.abstractdata.NamingPolicy;
 import org.javawebstack.httpclient.interceptor.BeforeRequestInterceptor;
-import org.javawebstack.httpclient.interceptor.ResponseTransformer;
 
 import java.net.HttpCookie;
+import java.nio.charset.StandardCharsets;
 import java.util.*;
 
 public class HTTPClient {
 
-    private GraphMapper graphMapper = new GraphMapper()
+    private AbstractMapper abstractMapper = new AbstractMapper()
             .setNamingPolicy(NamingPolicy.SNAKE_CASE);
     private int timeout = 5000;
     private String baseUrl = "";
@@ -18,7 +18,6 @@ public class HTTPClient {
     private Map<String, String> defaultQuery = new HashMap<>();
     private List<HttpCookie> defaultCookies = new ArrayList<>();
 
-    private ResponseTransformer responseTransformer;
     private BeforeRequestInterceptor beforeInterceptor;
 
     private boolean debug = false;
@@ -55,13 +54,13 @@ public class HTTPClient {
         return this.sslVerification;
     }
 
-    public HTTPClient graphMapper(GraphMapper mapper){
-        this.graphMapper = mapper;
+    public HTTPClient abstractMapper(AbstractMapper mapper){
+        this.abstractMapper = mapper;
         return this;
     }
 
-    public GraphMapper getGraphMapper(){
-        return graphMapper;
+    public AbstractMapper getAbstractMapper(){
+        return abstractMapper;
     }
 
     public HTTPClient timeout(int timeout){
@@ -118,7 +117,7 @@ public class HTTPClient {
         return this;
     }
 
-    public HTTPClient headers(Map<String, String[]> defaultHeaders){
+    public HTTPClient setDefaultHeaders(Map<String, String[]> defaultHeaders){
         this.defaultHeaders = defaultHeaders;
         return this;
     }
@@ -131,15 +130,14 @@ public class HTTPClient {
         return authorization("Bearer", token);
     }
 
+    public HTTPClient basicAuth(String username, String password) {
+        return authorization("Basic", Base64.getEncoder().encodeToString((username+":"+password).getBytes(StandardCharsets.UTF_8)));
+    }
+
     public HTTPClient setBaseUrl(String baseUrl) {
         if(baseUrl.endsWith("/"))
             baseUrl = baseUrl.substring(0, baseUrl.length() - 1);
         this.baseUrl = baseUrl;
-        return this;
-    }
-
-    public HTTPClient transformer(ResponseTransformer responseTransformer){
-        this.responseTransformer = responseTransformer;
         return this;
     }
 
@@ -184,7 +182,4 @@ public class HTTPClient {
         return request("DELETE", path);
     }
 
-    public ResponseTransformer getResponseTransformer() {
-        return responseTransformer;
-    }
 }
