@@ -228,9 +228,12 @@ public class HTTPRequest {
                 os.flush();
                 os.close();
             }
+
             status = conn.getResponseCode();
+
             conn.getHeaderFields().forEach((k,v) -> {
-                responseHeaders.put(k.toLowerCase(Locale.ROOT), v.toArray(new String[0]));
+                if(k != null && v != null)
+                    responseHeaders.put(k.toLowerCase(Locale.ROOT), v.toArray(new String[0]));
             });
 
             for(String value : headers("set-cookie"))
@@ -240,13 +243,16 @@ public class HTTPRequest {
             if(client.isAutoCookies())
                 cookies().forEach(client::cookie);
 
-            if(status>299){
+            if(status>299 || status<200){
                 this.responseBody = readAll(conn.getErrorStream());
             }else{
                 this.responseBody = readAll(conn.getInputStream());
             }
             return this;
         }catch(Exception e){
+            try {
+                status = conn.getResponseCode();
+            } catch (IOException ioException) {}
             if(client.isDebug())
                 e.printStackTrace();
             try {
