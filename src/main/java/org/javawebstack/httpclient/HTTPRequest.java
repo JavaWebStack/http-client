@@ -123,15 +123,12 @@ public class HTTPRequest {
     }
 
     public int status() {
-        if (responseBody == null)
-            execute();
+        execute();
         return status;
     }
 
     public byte[] bytes() {
-        if (responseBody == null)
-            execute();
-
+        execute();
         return responseBody;
     }
 
@@ -171,6 +168,8 @@ public class HTTPRequest {
     }
 
     public HTTPRequest execute() {
+        if (responseBody != null)
+            return this;
         HttpURLConnection conn = null;
         try{
             URL theUrl = new URL(client.getBaseUrl() + ((path.startsWith("/") || path.startsWith("http://") || path.startsWith("https://")) ? "" : "/") + path + (query.size() > 0 ? "?" + query.toString() : ""));
