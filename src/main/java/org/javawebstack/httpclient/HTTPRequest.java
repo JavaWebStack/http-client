@@ -112,6 +112,10 @@ public class HTTPRequest {
         return authorization("Bearer", token);
     }
 
+    public HTTPRequest tokenAuth(String token){
+        return authorization("token", token);
+    }
+
     public HTTPRequest jsonBody(Object object) {
         if(object instanceof AbstractElement)
             return jsonBodyElement((AbstractElement) object);
@@ -150,9 +154,15 @@ public class HTTPRequest {
         String contentType = header("Content-Type");
         if(contentType == null)
             contentType = "application/json";
+
         switch (contentType){
             case "application/x-www-form-urlencoded":
-                AbstractElement.fromFormData(string());
+                return AbstractElement.fromFormData(string());
+            case "text/yaml":
+            case "text/x-yaml":
+            case "application/yaml":
+            case "application/x-yaml":
+                return AbstractElement.fromYaml(string());
         }
         return AbstractElement.fromJson(string());
     }
