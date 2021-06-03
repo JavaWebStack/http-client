@@ -27,10 +27,13 @@ public class HTTPRequest {
     private byte[] responseBody;
     private int status;
 
+    private boolean followRedirects;
+
     public HTTPRequest(HTTPClient client, String method, String path){
         this.client = client;
         this.method = method;
         this.path = path;
+        this.followRedirects = client.isFollowingRedirects();
         for(String key : client.getDefaultQuery().keySet())
             query(key, client.getDefaultQuery().get(key));
         for(String key : client.getDefaultHeaders().keySet())
@@ -210,6 +213,7 @@ public class HTTPRequest {
             conn.setConnectTimeout(5000);
             conn.setRequestMethod(method);
             conn.setDoInput(true);
+            conn.setInstanceFollowRedirects(followRedirects);
             for(String k : requestHeaders.keySet()){
                 for(String v : requestHeaders.get(k))
                     conn.addRequestProperty(k, v);
@@ -290,6 +294,14 @@ public class HTTPRequest {
         }
         is.close();
         return baos.toByteArray();
+    }
+
+    public void setFollowRedirects(boolean followRedirects) {
+        this.followRedirects = followRedirects;
+    }
+
+    public boolean isFollowingRedirects() {
+        return followRedirects;
     }
 
     public String toString(){

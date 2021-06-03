@@ -25,6 +25,8 @@ public class HTTPClient {
     private boolean sslVerification = true;
     private boolean autoCookies = false;
 
+    private boolean followRedirects = false;
+
     public HTTPClient(String baseUrl) {
         this.baseUrl = baseUrl;
     }
@@ -191,4 +193,11 @@ public class HTTPClient {
         return request("DELETE", path);
     }
 
+    public boolean isFollowingRedirects() {
+        return followRedirects;
+    }
+
+    public void setFollowRedirects(boolean followRedirects) {
+        this.followRedirects = followRedirects;
+    }
 }
