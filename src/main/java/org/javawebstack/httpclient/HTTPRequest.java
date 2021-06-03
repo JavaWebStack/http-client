@@ -140,6 +140,10 @@ public class HTTPRequest {
         return new String(bytes(), StandardCharsets.UTF_8);
     }
 
+    public String redirect(){
+        return header("Location");
+    }
+
     public <T> T object(Class<T> type) {
         if(type == null)
             return null;
@@ -173,7 +177,7 @@ public class HTTPRequest {
     }
 
     public String[] headers(String key) {
-        String[] values = responseHeaders.get(key);
+        String[] values = responseHeaders.get(key.toLowerCase(Locale.ROOT));
         return values == null ? new String[0] : values;
     }
 
