@@ -221,7 +221,7 @@ public class HTTPRequest {
                 conn.addRequestProperty("Cookie", String.join("; ", reqCookies));
 
             if (client.getBeforeInterceptor() != null)
-                client.getBeforeInterceptor().doBefore(this);
+                client.getBeforeInterceptor().intercept(this);
 
 
             if(requestBody!=null){
@@ -251,6 +251,11 @@ public class HTTPRequest {
             }else{
                 this.responseBody = readAll(conn.getInputStream());
             }
+
+
+            if (client.getAfterInterceptor() != null)
+                client.getAfterInterceptor().intercept(this);
+
             return this;
         }catch(Exception e){
             try {
