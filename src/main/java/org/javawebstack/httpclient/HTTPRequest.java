@@ -118,6 +118,10 @@ public class HTTPRequest {
         return jsonBodyElement(client.getAbstractMapper().toAbstract(object));
     }
 
+    public Map<String, String[]> headers() {
+        return responseHeaders;
+    }
+
     public HTTPRequest jsonBodyElement(AbstractElement element) {
         return body(element.toJsonString()).contentType("application/json");
     }
