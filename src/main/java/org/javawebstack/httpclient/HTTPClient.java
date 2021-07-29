@@ -2,7 +2,7 @@ package org.javawebstack.httpclient;
 
 import org.javawebstack.abstractdata.AbstractMapper;
 import org.javawebstack.abstractdata.NamingPolicy;
-import org.javawebstack.httpclient.interceptor.BeforeRequestInterceptor;
+import org.javawebstack.httpclient.interceptor.RequestInterceptor;
 
 import java.net.HttpCookie;
 import java.nio.charset.StandardCharsets;
@@ -18,11 +18,14 @@ public class HTTPClient {
     private Map<String, String> defaultQuery = new HashMap<>();
     private List<HttpCookie> defaultCookies = new ArrayList<>();
 
-    private BeforeRequestInterceptor beforeInterceptor;
+    private RequestInterceptor beforeInterceptor;
+    private RequestInterceptor afterInterceptor;
 
     private boolean debug = false;
     private boolean sslVerification = true;
     private boolean autoCookies = false;
+
+    private boolean followRedirects = false;
 
     public HTTPClient(String baseUrl) {
         this.baseUrl = baseUrl;
@@ -153,13 +156,21 @@ public class HTTPClient {
         return request("GET", path);
     }
 
-    public HTTPClient before(BeforeRequestInterceptor requestInterceptor){
+    public HTTPClient before(RequestInterceptor requestInterceptor){
         beforeInterceptor = requestInterceptor;
         return this;
     }
+    public HTTPClient after(RequestInterceptor requestInterceptor) {
+        afterInterceptor = requestInterceptor;
+        return this;
+    }
 
-    public BeforeRequestInterceptor getBeforeInterceptor() {
+    public RequestInterceptor getBeforeInterceptor() {
         return beforeInterceptor;
+    }
+
+    public RequestInterceptor getAfterInterceptor() {
+        return afterInterceptor;
     }
 
     public HTTPRequest post(String path){
@@ -182,4 +193,11 @@ public class HTTPClient {
         return request("DELETE", path);
     }
 
+    public boolean isFollowingRedirects() {
+        return followRedirects;
+    }
+
+    public void setFollowRedirects(boolean followRedirects) {
+        this.followRedirects = followRedirects;
+    }
 }

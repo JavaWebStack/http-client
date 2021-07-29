@@ -27,10 +27,13 @@ public class HTTPRequest {
     private byte[] responseBody;
     private int status;
 
+    private boolean followRedirects;
+
     public HTTPRequest(HTTPClient client, String method, String path){
         this.client = client;
         this.method = method;
         this.path = path;
+        this.followRedirects = client.isFollowingRedirects();
         for(String key : client.getDefaultQuery().keySet())
             query(key, client.getDefaultQuery().get(key));
         for(String key : client.getDefaultHeaders().keySet())
@@ -112,6 +115,10 @@ public class HTTPRequest {
         return authorization("Bearer", token);
     }
 
+    public HTTPRequest tokenAuth(String token){
+        return authorization("token", token);
+    }
+
     public HTTPRequest jsonBody(Object object) {
         if(object instanceof AbstractElement)
             return jsonBodyElement((AbstractElement) object);
@@ -140,6 +147,10 @@ public class HTTPRequest {
         return new String(bytes(), StandardCharsets.UTF_8);
     }
 
+    public String redirect(){
+        return header("Location");
+    }
+
     public <T> T object(Class<T> type) {
         if(type == null)
             return null;
@@ -154,9 +165,15 @@ public class HTTPRequest {
         String contentType = header("Content-Type");
         if(contentType == null)
             contentType = "application/json";
+
         switch (contentType){
             case "application/x-www-form-urlencoded":
-                AbstractElement.fromFormData(string());
+                return AbstractElement.fromFormData(string());
+            case "text/yaml":
+            case "text/x-yaml":
+            case "application/yaml":
+            case "application/x-yaml":
+                return AbstractElement.fromYaml(string());
         }
         return AbstractElement.fromJson(string());
     }
@@ -167,7 +184,7 @@ public class HTTPRequest {
     }
 
     public String[] headers(String key) {
-        String[] values = responseHeaders.get(key);
+        String[] values = responseHeaders.get(key.toLowerCase(Locale.ROOT));
         return values == null ? new String[0] : values;
     }
 
@@ -200,6 +217,7 @@ public class HTTPRequest {
             conn.setConnectTimeout(5000);
             conn.setRequestMethod(method);
             conn.setDoInput(true);
+            conn.setInstanceFollowRedirects(followRedirects);
             for(String k : requestHeaders.keySet()){
                 for(String v : requestHeaders.get(k))
                     conn.addRequestProperty(k, v);
@@ -215,7 +233,7 @@ public class HTTPRequest {
                 conn.addRequestProperty("Cookie", String.join("; ", reqCookies));
 
             if (client.getBeforeInterceptor() != null)
-                client.getBeforeInterceptor().doBefore(this);
+                client.getBeforeInterceptor().intercept(this);
 
 
             if(requestBody!=null){
@@ -245,6 +263,11 @@ public class HTTPRequest {
             }else{
                 this.responseBody = readAll(conn.getInputStream());
             }
+
+
+            if (client.getAfterInterceptor() != null)
+                client.getAfterInterceptor().intercept(this);
+
             return this;
         }catch(Exception e){
             try {
@@ -275,6 +298,14 @@ public class HTTPRequest {
         }
         is.close();
         return baos.toByteArray();
+    }
+
+    public void setFollowRedirects(boolean followRedirects) {
+        this.followRedirects = followRedirects;
+    }
+
+    public boolean isFollowingRedirects() {
+        return followRedirects;
     }
 
     public String toString(){
