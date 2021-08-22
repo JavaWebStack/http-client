@@ -109,7 +109,7 @@ public class HTTPRequest {
     }
 
     public HTTPRequest formBodyElement(AbstractElement element) {
-        return body(element.toJsonString()).contentType("application/x-www-form-urlencoded");
+        return body(element.toFormDataString()).contentType("application/x-www-form-urlencoded");
     }
 
     public HTTPRequest bearer(String token){
