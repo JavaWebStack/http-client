@@ -40,8 +40,9 @@ public class HTTPRequest {
             header(key, client.getDefaultHeaders().get(key));
     }
 
-    public void cookie(HttpCookie cookie){
+    public HTTPRequest cookie(HttpCookie cookie){
         requestCookies.add(cookie);
+        return this;
     }
 
     public List<HttpCookie> cookies(){
@@ -300,8 +301,9 @@ public class HTTPRequest {
         return baos.toByteArray();
     }
 
-    public void setFollowRedirects(boolean followRedirects) {
+    public HTTPRequest setFollowRedirects(boolean followRedirects) {
         this.followRedirects = followRedirects;
+        return this;
     }
 
     public boolean isFollowingRedirects() {

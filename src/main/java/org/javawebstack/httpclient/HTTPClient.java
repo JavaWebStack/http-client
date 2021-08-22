@@ -33,24 +33,27 @@ public class HTTPClient {
 
     public HTTPClient() { }
 
-    public void debug(){
+    public HTTPClient debug(){
         this.debug = true;
+        return this;
     }
 
     public boolean isDebug(){
         return debug;
     }
 
-    public void autoCookies(){
+    public HTTPClient autoCookies(){
         autoCookies = true;
+        return this;
     }
 
     public boolean isAutoCookies(){
         return autoCookies;
     }
 
-    public void setSSLVerification(boolean sslVerification){
+    public HTTPClient setSSLVerification(boolean sslVerification){
         this.sslVerification = sslVerification;
+        return this;
     }
 
     public boolean isSSLVerification(){
@@ -91,11 +94,12 @@ public class HTTPClient {
         return this;
     }
 
-    public void removeCookie(String name){
+    public HTTPClient removeCookie(String name){
         for(HttpCookie cookie : new HashSet<>(defaultCookies)){
             if(cookie.getName().equalsIgnoreCase(name))
                 defaultCookies.remove(cookie);
         }
+        return this;
     }
 
     public List<HttpCookie> getDefaultCookies(){
@@ -197,7 +201,9 @@ public class HTTPClient {
         return followRedirects;
     }
 
-    public void setFollowRedirects(boolean followRedirects) {
+    public HTTPClient setFollowRedirects(boolean followRedirects) {
         this.followRedirects = followRedirects;
+        return this;
     }
+
 }
