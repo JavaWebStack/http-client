@@ -192,9 +192,50 @@ public class HTTPRequest {
     public HTTPRequest execute() {
         if (responseBody != null)
             return this;
+        if(client.isLegacyMode()) {
+            executeWithHttpUrlConnection();
+        } else {
+            executeWithHTTPClientSocket();
+        }
+        return this;
+    }
+
+    private String buildUrl() {
+        return client.getBaseUrl() + ((path.startsWith("/") || path.startsWith("http://") || path.startsWith("https://")) ? "" : "/") + path + (query.size() > 0 ? "?" + query.toString() : "");
+    }
+
+    private void executeWithHTTPClientSocket() {
+        try {
+            HTTPClientSocket socket = new HTTPClientSocket(buildUrl(), !client.isSSLVerification());
+            socket.setRequestMethod(method);
+            requestHeaders.forEach((k, values) -> {
+                for(String v : values)
+                    socket.addRequestHeader(k ,v);
+            });
+            if(requestBody != null) {
+                socket.setRequestHeader("content-length", String.valueOf(requestBody.length));
+                socket.getOutputStream().write(requestBody);
+            }
+            status = socket.getResponseStatus();
+            for(String k : socket.getResponseHeaderNames())
+                responseHeaders.put(k, socket.getResponseHeaders(k).toArray(new String[0]));
+            ByteArrayOutputStream baos = new ByteArrayOutputStream();
+            byte[] buffer = new byte[1024];
+            int r;
+            while ((r = socket.getInputStream().read(buffer)) != -1)
+                baos.write(buffer, 0, r);
+            socket.close();
+            responseBody = baos.toByteArray();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+
+    }
+
+    private void executeWithHttpUrlConnection() {
         HttpURLConnection conn = null;
         try{
-            URL theUrl = new URL(client.getBaseUrl() + ((path.startsWith("/") || path.startsWith("http://") || path.startsWith("https://")) ? "" : "/") + path + (query.size() > 0 ? "?" + query.toString() : ""));
+            URL theUrl = new URL(buildUrl());
             conn = (HttpURLConnection) theUrl.openConnection();
             if(!client.isSSLVerification() && conn instanceof HttpsURLConnection){
                 HttpsURLConnection httpsConn = (HttpsURLConnection) conn;
@@ -269,7 +310,7 @@ public class HTTPRequest {
             if (client.getAfterInterceptor() != null)
                 client.getAfterInterceptor().intercept(this);
 
-            return this;
+            return;
         }catch(Exception e){
             try {
                 status = conn.getResponseCode();
@@ -278,14 +319,14 @@ public class HTTPRequest {
                 e.printStackTrace();
             try {
                 this.responseBody = readAll(conn.getErrorStream());
-                return this;
+                return;
             }catch(IOException | NullPointerException ex){
                 if(client.isDebug())
                     ex.printStackTrace();
             }
         }
         this.responseBody = new byte[0];
-        return this;
+        return;
     }
 
     private static byte[] readAll(InputStream is) throws IOException {

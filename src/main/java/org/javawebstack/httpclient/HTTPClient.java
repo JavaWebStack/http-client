@@ -3,7 +3,10 @@ package org.javawebstack.httpclient;
 import org.javawebstack.abstractdata.AbstractMapper;
 import org.javawebstack.abstractdata.NamingPolicy;
 import org.javawebstack.httpclient.interceptor.RequestInterceptor;
+import org.javawebstack.httpclient.websocket.WebSocket;
+import org.javawebstack.httpclient.websocket.WebSocketHandler;
 
+import java.io.IOException;
 import java.net.HttpCookie;
 import java.nio.charset.StandardCharsets;
 import java.util.*;
@@ -27,6 +30,8 @@ public class HTTPClient {
 
     private boolean followRedirects = false;
 
+    private boolean legacyMode = false;
+
     public HTTPClient(String baseUrl) {
         this.baseUrl = baseUrl;
     }
@@ -40,6 +45,15 @@ public class HTTPClient {
 
     public boolean isDebug(){
         return debug;
+    }
+
+    public HTTPClient legacyMode() {
+        this.legacyMode = true;
+        return this;
+    }
+
+    public boolean isLegacyMode() {
+        return legacyMode;
     }
 
     public HTTPClient autoCookies(){
@@ -154,6 +168,19 @@ public class HTTPClient {
 
     public HTTPRequest request(String method, String path){
         return new HTTPRequest(this, method, path);
+    }
+
+    public WebSocket webSocket(String path, WebSocketHandler handler) throws IOException {
+        return webSocket(path, handler, null);
+    }
+
+    public WebSocket webSocket(String path, WebSocketHandler handler, Map<String, String> additionalHeaders) throws IOException {
+        HTTPClientSocket socket = new HTTPClientSocket(getBaseUrl() + ((path.startsWith("/") || path.startsWith("http://") || path.startsWith("https://")) ? "" : "/") + path, !isSSLVerification());
+        if(additionalHeaders != null)
+            additionalHeaders.forEach(socket::setRequestHeader);
+        WebSocket webSocket = new WebSocket(socket, handler);
+        new Thread(webSocket).start();
+        return webSocket;
     }
 
     public HTTPRequest get(String path){
