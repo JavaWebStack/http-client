@@ -230,6 +230,13 @@ public class HTTPRequest {
             requestImplementation.close();
         } catch (IOException ignored) {}
 
+        for(String value : headers("set-cookie"))
+            responseCookies.addAll(HttpCookie.parse("set-cookie: "+value));
+        for(String value : headers("set-cookie2"))
+            responseCookies.addAll(HttpCookie.parse("set-cookie2: "+value));
+        if(client.isAutoCookies())
+            cookies().forEach(client::cookie);
+
         if (client.getAfterInterceptor() != null)
             client.getAfterInterceptor().intercept(this);
         return this;
