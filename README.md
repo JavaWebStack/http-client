@@ -5,7 +5,7 @@ JWS HTTP Client
 
 ![GitHub Workflow Status (branch)](https://img.shields.io/github/workflow/status/JavaWebStack/http-client/Maven%20Deploy/master)
 ![GitHub](https://img.shields.io/github/license/JavaWebStack/http-client)
-![Maven metadata URL](https://img.shields.io/maven-metadata/v?metadataUrl=https%3A%2F%2Frepo1.maven.org%2Fmaven2%2Forg%2Fjavawebstack%2FHTTP-Client%2Fmaven-metadata.xml)
+![Maven metadata URL](https://img.shields.io/maven-metadata/v?metadataUrl=https%3A%2F%2Frepo1.maven.org%2Fmaven2%2Forg%2Fjavawebstack%2Fhttp-client%2Fmaven-metadata.xml)
 ![GitHub contributors](https://img.shields.io/github/contributors/JavaWebStack/http-client)
 ![Lines of code](https://img.shields.io/tokei/lines/github/JavaWebStack/http-client)
 ![Discord](https://img.shields.io/discord/815612319378833408?color=%237289DA&label=discord)
