@@ -2,15 +2,13 @@ package org.javawebstack.httpclient;
 
 import org.javawebstack.abstractdata.AbstractElement;
 import org.javawebstack.abstractdata.util.QueryString;
+import org.javawebstack.httpclient.implementation.IHTTPRequestImplementation;
 
-import javax.net.ssl.*;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.OutputStream;
 import java.net.*;
 import java.nio.charset.StandardCharsets;
-import java.security.cert.X509Certificate;
 import java.util.*;
 
 public class HTTPRequest {
@@ -21,16 +19,18 @@ public class HTTPRequest {
     private final QueryString query = new QueryString();
     private final Map<String, String[]> requestHeaders = new HashMap<>();
     private byte[] requestBody;
-    private final Map<String, String[]> responseHeaders = new HashMap<>();
+    private Map<String, String[]> responseHeaders = new HashMap<>();
     private final List<HttpCookie> requestCookies = new ArrayList<>();
     private final List<HttpCookie> responseCookies = new ArrayList<>();
     private byte[] responseBody;
     private int status;
+    private boolean executed;
 
     private boolean followRedirects;
 
-    public HTTPRequest(HTTPClient client, String method, String path){
+    public HTTPRequest(HTTPClient client, String method, String path) {
         this.client = client;
+
         this.method = method;
         this.path = path;
         this.followRedirects = client.isFollowingRedirects();
@@ -40,12 +40,12 @@ public class HTTPRequest {
             header(key, client.getDefaultHeaders().get(key));
     }
 
-    public HTTPRequest cookie(HttpCookie cookie){
+    public HTTPRequest cookie(HttpCookie cookie) {
         requestCookies.add(cookie);
         return this;
     }
 
-    public List<HttpCookie> cookies(){
+    public List<HttpCookie> cookies() {
         return responseCookies;
     }
 
@@ -53,8 +53,8 @@ public class HTTPRequest {
         return responseCookies.stream().filter(c -> c.getName().equalsIgnoreCase(name)).findFirst().orElse(null);
     }
 
-    public HTTPRequest header(String key, String... values){
-        requestHeaders.put(key, values);
+    public HTTPRequest header(String key, String... values) {
+        requestHeaders.put(key.toLowerCase(Locale.ROOT), values);
         return this;
     }
 
@@ -63,28 +63,28 @@ public class HTTPRequest {
         return this;
     }
 
-    public HTTPRequest query(String key1, String key2, String value){
+    public HTTPRequest query(String key1, String key2, String value) {
         return query(key1 + "[" + key2 + "]", value);
     }
 
-    public HTTPRequest query(String key1, String key2, String key3, String value){
+    public HTTPRequest query(String key1, String key2, String key3, String value) {
         return query(key1 + "[" + key2 + "]" + "[" + key3 + "]", value);
     }
 
-    public HTTPRequest body(byte[] body){
+    public HTTPRequest body(byte[] body) {
         this.requestBody = body;
         return this;
     }
 
-    public HTTPRequest body(String body){
+    public HTTPRequest body(String body) {
         return body(body.getBytes(StandardCharsets.UTF_8));
     }
 
-    public HTTPRequest contentType(String contentType){
+    public HTTPRequest contentType(String contentType) {
         return header("Content-Type", contentType);
     }
 
-    public HTTPRequest authorization(String type, String value){
+    public HTTPRequest authorization(String type, String value) {
         return header("Authorization", type + " " + value);
     }
 
@@ -112,11 +112,11 @@ public class HTTPRequest {
         return body(element.toFormDataString()).contentType("application/x-www-form-urlencoded");
     }
 
-    public HTTPRequest bearer(String token){
+    public HTTPRequest bearer(String token) {
         return authorization("Bearer", token);
     }
 
-    public HTTPRequest tokenAuth(String token){
+    public HTTPRequest tokenAuth(String token) {
         return authorization("token", token);
     }
 
@@ -144,11 +144,11 @@ public class HTTPRequest {
         return responseBody;
     }
 
-    public String string(){
+    public String string() {
         return new String(bytes(), StandardCharsets.UTF_8);
     }
 
-    public String redirect(){
+    public String redirect() {
         return header("Location");
     }
 
@@ -190,143 +190,53 @@ public class HTTPRequest {
     }
 
     public HTTPRequest execute() {
-        if (responseBody != null)
+        if (executed)
             return this;
-        if(client.isLegacyMode()) {
-            executeWithHttpUrlConnection();
-        } else {
-            executeWithHTTPClientSocket();
+        executed = true;
+
+        if (client.getBeforeInterceptor() != null)
+            client.getBeforeInterceptor().intercept(this);
+
+        List<String> reqCookies = new ArrayList<>();
+        for(HttpCookie cookie : client.getDefaultCookies())
+            reqCookies.add(cookie.getName()+"="+cookie.getValue());
+        for(HttpCookie cookie : requestCookies)
+            reqCookies.add(cookie.getName()+"="+cookie.getValue());
+
+        if(reqCookies.size() > 0) {
+            String[] headers = requestHeaders.get("cookie");
+            if(headers == null) {
+                requestHeaders.put("cookie", new String[]{ String.join("; ", reqCookies) });
+            } else {
+                String[] newHeaders = new String[headers.length + 1];
+                System.arraycopy(headers, 0, newHeaders, 0, headers.length);
+                newHeaders[newHeaders.length - 1] = String.join("; ", reqCookies);
+                requestHeaders.put("cookie", newHeaders);
+            }
         }
+
+        IHTTPRequestImplementation requestImplementation = client.getHttpImplementation().get();
+        requestImplementation.setUrl(buildUrl());
+        requestImplementation.setMethod(method);
+        requestImplementation.setTimeout(client.getTimeout());
+        requestImplementation.setFollowRedirects(followRedirects);
+        requestImplementation.setRequestHeaders(requestHeaders);
+        requestImplementation.setSslVerification(client.isSSLVerification());
+        requestImplementation.setRequestBody(requestBody);
+        status = requestImplementation.execute();
+        responseHeaders = requestImplementation.getResponseHeaders();
+        try {
+            responseBody = readAll(requestImplementation.getResponseStream());
+            requestImplementation.close();
+        } catch (IOException ignored) {}
+
+        if (client.getAfterInterceptor() != null)
+            client.getAfterInterceptor().intercept(this);
         return this;
     }
 
     private String buildUrl() {
         return client.getBaseUrl() + ((path.startsWith("/") || path.startsWith("http://") || path.startsWith("https://")) ? "" : "/") + path + (query.size() > 0 ? "?" + query.toString() : "");
-    }
-
-    private void executeWithHTTPClientSocket() {
-        try {
-            HTTPClientSocket socket = new HTTPClientSocket(buildUrl(), !client.isSSLVerification());
-            socket.setRequestMethod(method);
-            requestHeaders.forEach((k, values) -> {
-                for(String v : values)
-                    socket.addRequestHeader(k ,v);
-            });
-            if(requestBody != null) {
-                socket.setRequestHeader("content-length", String.valueOf(requestBody.length));
-                socket.getOutputStream().write(requestBody);
-            }
-            status = socket.getResponseStatus();
-            for(String k : socket.getResponseHeaderNames())
-                responseHeaders.put(k, socket.getResponseHeaders(k).toArray(new String[0]));
-            ByteArrayOutputStream baos = new ByteArrayOutputStream();
-            byte[] buffer = new byte[1024];
-            int r;
-            while ((r = socket.getInputStream().read(buffer)) != -1)
-                baos.write(buffer, 0, r);
-            socket.close();
-            responseBody = baos.toByteArray();
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-
-    }
-
-    private void executeWithHttpUrlConnection() {
-        HttpURLConnection conn = null;
-        try{
-            URL theUrl = new URL(buildUrl());
-            conn = (HttpURLConnection) theUrl.openConnection();
-            if(!client.isSSLVerification() && conn instanceof HttpsURLConnection){
-                HttpsURLConnection httpsConn = (HttpsURLConnection) conn;
-                TrustManager[] trustAllCerts = new TrustManager[] {
-                        new X509TrustManager() {
-                            public java.security.cert.X509Certificate[] getAcceptedIssuers() {
-                                return null;
-                            }
-                            public void checkClientTrusted(X509Certificate[] certs, String authType) {
-                            }
-                            public void checkServerTrusted(X509Certificate[] certs, String authType) {
-                            }
-                        }
-                };
-                SSLContext sc = SSLContext.getInstance("SSL");
-                sc.init(null, trustAllCerts, new java.security.SecureRandom());
-                httpsConn.setSSLSocketFactory(sc.getSocketFactory());
-                httpsConn.setHostnameVerifier((hostname, session) -> true);
-            }
-            conn.setReadTimeout(client.getTimeout());
-            conn.setConnectTimeout(5000);
-            conn.setRequestMethod(method);
-            conn.setDoInput(true);
-            conn.setInstanceFollowRedirects(followRedirects);
-            for(String k : requestHeaders.keySet()){
-                for(String v : requestHeaders.get(k))
-                    conn.addRequestProperty(k, v);
-            }
-
-            List<String> reqCookies = new ArrayList<>();
-            for(HttpCookie cookie : client.getDefaultCookies())
-                reqCookies.add(cookie.getName()+"="+cookie.getValue());
-            for(HttpCookie cookie : requestCookies)
-                reqCookies.add(cookie.getName()+"="+cookie.getValue());
-
-            if(reqCookies.size() > 0)
-                conn.addRequestProperty("Cookie", String.join("; ", reqCookies));
-
-            if (client.getBeforeInterceptor() != null)
-                client.getBeforeInterceptor().intercept(this);
-
-
-            if(requestBody!=null){
-                conn.setDoOutput(true);
-                OutputStream os = conn.getOutputStream();
-                os.write(requestBody);
-                os.flush();
-                os.close();
-            }
-
-            status = conn.getResponseCode();
-
-            conn.getHeaderFields().forEach((k,v) -> {
-                if(k != null && v != null)
-                    responseHeaders.put(k.toLowerCase(Locale.ROOT), v.toArray(new String[0]));
-            });
-
-            for(String value : headers("set-cookie"))
-                responseCookies.addAll(HttpCookie.parse("set-cookie: "+value));
-            for(String value : headers("set-cookie2"))
-                responseCookies.addAll(HttpCookie.parse("set-cookie2: "+value));
-            if(client.isAutoCookies())
-                cookies().forEach(client::cookie);
-
-            if(status>299 || status<200){
-                this.responseBody = readAll(conn.getErrorStream());
-            }else{
-                this.responseBody = readAll(conn.getInputStream());
-            }
-
-
-            if (client.getAfterInterceptor() != null)
-                client.getAfterInterceptor().intercept(this);
-
-            return;
-        }catch(Exception e){
-            try {
-                status = conn.getResponseCode();
-            } catch (IOException ioException) {}
-            if(client.isDebug())
-                e.printStackTrace();
-            try {
-                this.responseBody = readAll(conn.getErrorStream());
-                return;
-            }catch(IOException | NullPointerException ex){
-                if(client.isDebug())
-                    ex.printStackTrace();
-            }
-        }
-        this.responseBody = new byte[0];
-        return;
     }
 
     private static byte[] readAll(InputStream is) throws IOException {

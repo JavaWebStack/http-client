@@ -2,6 +2,8 @@ package org.javawebstack.httpclient;
 
 import org.javawebstack.abstractdata.AbstractMapper;
 import org.javawebstack.abstractdata.NamingPolicy;
+import org.javawebstack.httpclient.implementation.IHTTPRequestImplementation;
+import org.javawebstack.httpclient.implementation.JavaNetHTTPRequestImplementation;
 import org.javawebstack.httpclient.interceptor.RequestInterceptor;
 import org.javawebstack.httpclient.websocket.WebSocket;
 import org.javawebstack.httpclient.websocket.WebSocketHandler;
@@ -10,16 +12,19 @@ import java.io.IOException;
 import java.net.HttpCookie;
 import java.nio.charset.StandardCharsets;
 import java.util.*;
+import java.util.function.Supplier;
 
 public class HTTPClient {
 
     private AbstractMapper abstractMapper = new AbstractMapper()
             .setNamingPolicy(NamingPolicy.SNAKE_CASE);
     private int timeout = 5000;
-    private String baseUrl = "";
+    private String baseUrl;
     private Map<String, String[]> defaultHeaders = new HashMap<>();
     private Map<String, String> defaultQuery = new HashMap<>();
     private List<HttpCookie> defaultCookies = new ArrayList<>();
+
+    private Supplier<? extends IHTTPRequestImplementation> httpImplementation = JavaNetHTTPRequestImplementation::new;
 
     private RequestInterceptor beforeInterceptor;
     private RequestInterceptor afterInterceptor;
@@ -30,60 +35,60 @@ public class HTTPClient {
 
     private boolean followRedirects = false;
 
-    private boolean legacyMode = false;
-
     public HTTPClient(String baseUrl) {
         this.baseUrl = baseUrl;
     }
 
-    public HTTPClient() { }
+    public HTTPClient() {
+        this("");
+    }
 
-    public HTTPClient debug(){
+    public HTTPClient debug() {
         this.debug = true;
         return this;
     }
 
-    public boolean isDebug(){
+    public boolean isDebug() {
         return debug;
     }
 
-    public HTTPClient legacyMode() {
-        this.legacyMode = true;
+    public Supplier<? extends IHTTPRequestImplementation> getHttpImplementation() {
+        return httpImplementation;
+    }
+
+    public HTTPClient httpImplementation(Supplier<? extends IHTTPRequestImplementation> implementation) {
+        this.httpImplementation = implementation;
         return this;
     }
 
-    public boolean isLegacyMode() {
-        return legacyMode;
-    }
-
-    public HTTPClient autoCookies(){
+    public HTTPClient autoCookies() {
         autoCookies = true;
         return this;
     }
 
-    public boolean isAutoCookies(){
+    public boolean isAutoCookies() {
         return autoCookies;
     }
 
-    public HTTPClient setSSLVerification(boolean sslVerification){
+    public HTTPClient setSSLVerification(boolean sslVerification) {
         this.sslVerification = sslVerification;
         return this;
     }
 
-    public boolean isSSLVerification(){
+    public boolean isSSLVerification() {
         return this.sslVerification;
     }
 
-    public HTTPClient abstractMapper(AbstractMapper mapper){
+    public HTTPClient abstractMapper(AbstractMapper mapper) {
         this.abstractMapper = mapper;
         return this;
     }
 
-    public AbstractMapper getAbstractMapper(){
+    public AbstractMapper getAbstractMapper() {
         return abstractMapper;
     }
 
-    public HTTPClient timeout(int timeout){
+    public HTTPClient timeout(int timeout) {
         this.timeout = timeout;
         return this;
     }
@@ -92,35 +97,35 @@ public class HTTPClient {
         return timeout;
     }
 
-    public HTTPClient header(String key, String... values){
+    public HTTPClient header(String key, String... values) {
         defaultHeaders.put(key, values);
         return this;
     }
 
-    public HTTPClient query(String key, String value){
+    public HTTPClient query(String key, String value) {
         defaultQuery.put(key, value);
         return this;
     }
 
-    public HTTPClient cookie(HttpCookie cookie){
+    public HTTPClient cookie(HttpCookie cookie) {
         removeCookie(cookie.getName());
         defaultCookies.add(cookie);
         return this;
     }
 
-    public HTTPClient removeCookie(String name){
-        for(HttpCookie cookie : new HashSet<>(defaultCookies)){
+    public HTTPClient removeCookie(String name) {
+        for(HttpCookie cookie : new HashSet<>(defaultCookies)) {
             if(cookie.getName().equalsIgnoreCase(name))
                 defaultCookies.remove(cookie);
         }
         return this;
     }
 
-    public List<HttpCookie> getDefaultCookies(){
+    public List<HttpCookie> getDefaultCookies() {
         return defaultCookies;
     }
 
-    public HTTPClient setDefaultCookies(List<HttpCookie> cookies){
+    public HTTPClient setDefaultCookies(List<HttpCookie> cookies) {
         this.defaultCookies = cookies;
         return this;
     }
@@ -138,16 +143,16 @@ public class HTTPClient {
         return this;
     }
 
-    public HTTPClient setDefaultHeaders(Map<String, String[]> defaultHeaders){
+    public HTTPClient setDefaultHeaders(Map<String, String[]> defaultHeaders) {
         this.defaultHeaders = defaultHeaders;
         return this;
     }
 
-    public HTTPClient authorization(String type, String value){
+    public HTTPClient authorization(String type, String value) {
         return header("Authorization", type + " " + value);
     }
 
-    public HTTPClient bearer(String token){
+    public HTTPClient bearer(String token) {
         return authorization("Bearer", token);
     }
 
@@ -166,7 +171,7 @@ public class HTTPClient {
         return baseUrl;
     }
 
-    public HTTPRequest request(String method, String path){
+    public HTTPRequest request(String method, String path) {
         return new HTTPRequest(this, method, path);
     }
 
@@ -183,11 +188,11 @@ public class HTTPClient {
         return webSocket;
     }
 
-    public HTTPRequest get(String path){
+    public HTTPRequest get(String path) {
         return request("GET", path);
     }
 
-    public HTTPClient before(RequestInterceptor requestInterceptor){
+    public HTTPClient before(RequestInterceptor requestInterceptor) {
         beforeInterceptor = requestInterceptor;
         return this;
     }
@@ -204,23 +209,23 @@ public class HTTPClient {
         return afterInterceptor;
     }
 
-    public HTTPRequest post(String path){
+    public HTTPRequest post(String path) {
         return request("POST", path);
     }
 
-    public HTTPRequest post(String path, Object body){
+    public HTTPRequest post(String path, Object body) {
         return post(path).jsonBody(body);
     }
 
-    public HTTPRequest put(String path){
+    public HTTPRequest put(String path) {
         return request("PUT", path);
     }
 
-    public HTTPRequest put(String path, Object body){
+    public HTTPRequest put(String path, Object body) {
         return put(path).jsonBody(body);
     }
 
-    public HTTPRequest delete(String path){
+    public HTTPRequest delete(String path) {
         return request("DELETE", path);
     }
 
