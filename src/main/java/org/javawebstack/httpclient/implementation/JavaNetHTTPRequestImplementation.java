@@ -26,6 +26,7 @@ public class JavaNetHTTPRequestImplementation implements IHTTPRequestImplementat
     private byte[] requestBody;
 
     private int status;
+    private String statusMessage;
 
     public void setMethod(String method) {
         this.method = method;
@@ -57,6 +58,10 @@ public class JavaNetHTTPRequestImplementation implements IHTTPRequestImplementat
 
     public int getResponseStatus() {
         return status;
+    }
+
+    public String getResponseStatusMessage() {
+        return statusMessage;
     }
 
     public Map<String, String[]> getResponseHeaders() {
@@ -124,6 +129,7 @@ public class JavaNetHTTPRequestImplementation implements IHTTPRequestImplementat
             }
 
             status = conn.getResponseCode();
+            statusMessage = conn.getResponseMessage();
 
         }catch(Exception ignored) {}
         if(status == 0)

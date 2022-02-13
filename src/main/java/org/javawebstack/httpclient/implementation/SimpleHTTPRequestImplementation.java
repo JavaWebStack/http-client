@@ -18,6 +18,7 @@ public class SimpleHTTPRequestImplementation implements IHTTPRequestImplementati
     private byte[] requestBody;
 
     private int status;
+    private String statusMessage;
     private Map<String, String[]> responseHeaders = new HashMap<>();
     private HTTPClientSocket socket;
 
@@ -53,6 +54,10 @@ public class SimpleHTTPRequestImplementation implements IHTTPRequestImplementati
         return status;
     }
 
+    public String getResponseStatusMessage() {
+        return statusMessage;
+    }
+
     public Map<String, String[]> getResponseHeaders() {
         return responseHeaders;
     }
@@ -74,6 +79,7 @@ public class SimpleHTTPRequestImplementation implements IHTTPRequestImplementati
                 socket.getOutputStream().write(requestBody);
             }
             status = socket.getResponseStatus();
+            statusMessage = socket.getResponseStatusMessage();
             for(String k : socket.getResponseHeaderNames())
                 responseHeaders.put(k, socket.getResponseHeaders(k).toArray(new String[0]));
         } catch (IOException e) {

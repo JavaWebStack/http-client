@@ -24,6 +24,7 @@ public class HTTPRequest {
     private final List<HttpCookie> responseCookies = new ArrayList<>();
     private byte[] responseBody;
     private int status;
+    private String statusMessage;
     private boolean executed;
 
     private boolean followRedirects;
@@ -139,6 +140,11 @@ public class HTTPRequest {
         return status;
     }
 
+    public String statusMessage() {
+        execute();
+        return statusMessage;
+    }
+
     public byte[] bytes() {
         execute();
         return responseBody;
@@ -224,6 +230,7 @@ public class HTTPRequest {
         requestImplementation.setSslVerification(client.isSSLVerification());
         requestImplementation.setRequestBody(requestBody);
         status = requestImplementation.execute();
+        statusMessage = requestImplementation.getResponseStatusMessage();
         responseHeaders = requestImplementation.getResponseHeaders();
         try {
             responseBody = readAll(requestImplementation.getResponseStream());
