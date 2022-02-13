@@ -23,6 +23,10 @@ public interface IHTTPRequestImplementation {
 
     InputStream getResponseStream();
 
+    int getResponseStatus();
+
+    String getResponseStatusMessage();
+
     int execute();
 
     void close();

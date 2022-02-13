@@ -31,6 +31,7 @@ public class ApacheHTTPRequestImplementation implements IHTTPRequestImplementati
     private byte[] requestBody;
 
     private int status;
+    private String statusMessage;
     private Map<String, String[]> responseHeaders = new HashMap<>();
     private HttpEntity responseEntity;
 
@@ -64,6 +65,10 @@ public class ApacheHTTPRequestImplementation implements IHTTPRequestImplementati
 
     public int getResponseStatus() {
         return status;
+    }
+
+    public String getResponseStatusMessage() {
+        return statusMessage;
     }
 
     public Map<String, String[]> getResponseHeaders() {
@@ -111,6 +116,7 @@ public class ApacheHTTPRequestImplementation implements IHTTPRequestImplementati
             HttpResponse response = client.execute(builder.build());
 
             status = response.getStatusLine().getStatusCode();
+            statusMessage = response.getStatusLine().getReasonPhrase();
             Map<String, List<String>> resHeaders = new HashMap<>();
             for(Header h : response.getAllHeaders())
                 resHeaders.computeIfAbsent(h.getName().toLowerCase(Locale.ROOT), n -> new ArrayList<>()).add(h.getValue());
