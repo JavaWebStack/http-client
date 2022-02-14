@@ -4,6 +4,7 @@ import javax.net.ssl.HttpsURLConnection;
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.TrustManager;
 import javax.net.ssl.X509TrustManager;
+import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -82,7 +83,7 @@ public class JavaNetHTTPRequestImplementation implements IHTTPRequestImplementat
                 return conn.getInputStream();
             }
         } catch (IOException ignored) {
-            return null;
+            return new ByteArrayInputStream(new byte[0]);
         }
     }
 
