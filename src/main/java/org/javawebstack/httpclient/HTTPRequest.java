@@ -59,6 +59,11 @@ public class HTTPRequest {
         return this;
     }
 
+    public HTTPRequest query (Map<String, String> values) {
+        values.forEach(this::query);
+        return this;
+    }
+
     public HTTPRequest query(String key, String value){
         query.set(key, value);
         return this;
