@@ -259,6 +259,8 @@ public class HTTPRequest {
     }
 
     private static byte[] readAll(InputStream is) throws IOException {
+        if(is == null)
+            return new byte[0];
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
         byte[] data = new byte[1024];
         int r = 0;

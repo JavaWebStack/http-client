@@ -22,6 +22,6 @@ You can find the current docs on our [website](https://docs.javawebstack.org/fra
 <dependency>
     <groupId>org.javawebstack</groupId>
     <artifactId>http-client</artifactId>
-    <version>1.0.0</version>
+    <version>1.0.1</version>
 </dependency>
 ```

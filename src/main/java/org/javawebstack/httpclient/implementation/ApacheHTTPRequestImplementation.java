@@ -1,24 +1,27 @@
 package org.javawebstack.httpclient.implementation;
 
-import org.apache.http.Header;
-import org.apache.http.HttpEntity;
-import org.apache.http.HttpResponse;
-import org.apache.http.client.HttpClient;
-import org.apache.http.client.config.RequestConfig;
-import org.apache.http.client.methods.RequestBuilder;
-import org.apache.http.conn.ssl.NoopHostnameVerifier;
-import org.apache.http.conn.ssl.TrustAllStrategy;
-import org.apache.http.entity.ByteArrayEntity;
-import org.apache.http.entity.ContentType;
-import org.apache.http.impl.client.HttpClientBuilder;
-import org.apache.http.ssl.SSLContextBuilder;
+import org.apache.hc.client5.http.classic.HttpClient;
+import org.apache.hc.client5.http.config.RequestConfig;
+import org.apache.hc.client5.http.impl.classic.HttpClientBuilder;
+import org.apache.hc.client5.http.impl.io.PoolingHttpClientConnectionManagerBuilder;
+import org.apache.hc.client5.http.io.HttpClientConnectionManager;
+import org.apache.hc.client5.http.ssl.NoopHostnameVerifier;
+import org.apache.hc.client5.http.ssl.SSLConnectionSocketFactoryBuilder;
+import org.apache.hc.client5.http.ssl.TrustAllStrategy;
+import org.apache.hc.core5.http.*;
+import org.apache.hc.core5.http.io.entity.ByteArrayEntity;
+import org.apache.hc.core5.http.io.support.ClassicRequestBuilder;
+import org.apache.hc.core5.ssl.SSLContextBuilder;
 
+import javax.net.ssl.SSLContext;
+import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.security.KeyManagementException;
 import java.security.KeyStoreException;
 import java.security.NoSuchAlgorithmException;
 import java.util.*;
+import java.util.concurrent.TimeUnit;
 
 public class ApacheHTTPRequestImplementation implements IHTTPRequestImplementation {
 
@@ -76,6 +79,8 @@ public class ApacheHTTPRequestImplementation implements IHTTPRequestImplementati
     }
 
     public InputStream getResponseStream() {
+        if(responseEntity == null)
+            return new ByteArrayInputStream(new byte[0]);
         try {
             return responseEntity.getContent();
         } catch (IOException ignored) {
@@ -86,22 +91,28 @@ public class ApacheHTTPRequestImplementation implements IHTTPRequestImplementati
     public int execute() {
         try {
             RequestConfig config = RequestConfig.custom()
-                    .setConnectTimeout(timeout)
-                    .setConnectionRequestTimeout(timeout)
+                    .setConnectTimeout(timeout, TimeUnit.MILLISECONDS)
+                    .setConnectionRequestTimeout(timeout, TimeUnit.MILLISECONDS)
                     .setRedirectsEnabled(followRedirects)
                     .build();
             HttpClientBuilder clientBuilder = HttpClientBuilder.create()
                     .setDefaultRequestConfig(config);
 
             if(!sslVerification) {
-                clientBuilder
-                        .setSSLContext(new SSLContextBuilder().loadTrustMaterial(null, TrustAllStrategy.INSTANCE).build())
-                        .setSSLHostnameVerifier(NoopHostnameVerifier.INSTANCE);
+                SSLContext context = new SSLContextBuilder().loadTrustMaterial(null, TrustAllStrategy.INSTANCE).build();
+                HttpClientConnectionManager cm = PoolingHttpClientConnectionManagerBuilder.create()
+                        .setSSLSocketFactory(SSLConnectionSocketFactoryBuilder.create()
+                                .setSslContext(context)
+                                .setHostnameVerifier(NoopHostnameVerifier.INSTANCE)
+                                .build()
+                        )
+                        .build();
+                clientBuilder.setConnectionManager(cm);
             }
 
             HttpClient client = clientBuilder.build();
 
-            RequestBuilder builder = RequestBuilder.create(method);
+            ClassicRequestBuilder builder = ClassicRequestBuilder.create(method);
             builder.setUri(url);
             requestHeaders.forEach((k, values) -> {
                 for(String v : values)
@@ -113,12 +124,13 @@ public class ApacheHTTPRequestImplementation implements IHTTPRequestImplementati
                 builder.setEntity(new ByteArrayEntity(requestBody, ContentType.create(contentType)));
             }
 
-            HttpResponse response = client.execute(builder.build());
+            ClassicHttpResponse response = client.execute(builder.build(), res -> res);
+            responseEntity = response.getEntity();
 
-            status = response.getStatusLine().getStatusCode();
-            statusMessage = response.getStatusLine().getReasonPhrase();
+            status = response.getCode();
+            statusMessage = response.getReasonPhrase();
             Map<String, List<String>> resHeaders = new HashMap<>();
-            for(Header h : response.getAllHeaders())
+            for(Header h : response.getHeaders())
                 resHeaders.computeIfAbsent(h.getName().toLowerCase(Locale.ROOT), n -> new ArrayList<>()).add(h.getValue());
             resHeaders.forEach((k, v) -> responseHeaders.put(k, v.toArray(new String[0])));
 
