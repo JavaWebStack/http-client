@@ -133,8 +133,6 @@ public class HTTPClientSocket {
                 .append(" ")
                 .append(requestPath)
                 .append(" HTTP/1.1\nHost: ")
-                .append(host)
-                .append("\r\nHost: ")
                 .append(host);
         sb.append("\r\n");
         requestHeaders.forEach((k, values) -> values.forEach(v -> sb.append(k).append(": ").append(v).append("\r\n")));

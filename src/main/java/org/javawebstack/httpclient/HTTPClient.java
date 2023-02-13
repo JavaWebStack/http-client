@@ -180,7 +180,7 @@ public class HTTPClient {
     }
 
     public WebSocket webSocket(String path, WebSocketHandler handler, Map<String, String> additionalHeaders) throws IOException {
-        HTTPClientSocket socket = new HTTPClientSocket(getBaseUrl() + ((path.startsWith("/") || path.startsWith("http://") || path.startsWith("https://")) ? "" : "/") + path, !isSSLVerification());
+        HTTPClientSocket socket = new HTTPClientSocket(getBaseUrl() + ((path.startsWith("/") || path.startsWith("http://") || path.startsWith("https://") || path.startsWith("ws://") || path.startsWith("wss://")) ? "" : "/") + path, !isSSLVerification());
         if(additionalHeaders != null)
             additionalHeaders.forEach(socket::setRequestHeader);
         WebSocket webSocket = new WebSocket(socket, handler);

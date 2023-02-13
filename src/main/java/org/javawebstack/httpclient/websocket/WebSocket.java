@@ -54,7 +54,11 @@ public class WebSocket implements Runnable {
                         socket.close();
                         break;
                     case WebSocketFrame.OP_PING:
-                        frame.setOpcode(WebSocketFrame.OP_PONG).setMaskKey().write(socket.getOutputStream());
+                        if (frame.getPayload().length > 125) {
+                            close(1002, "Protocol Error");
+                        } else {
+                            frame.setOpcode(WebSocketFrame.OP_PONG).setMaskKey().write(socket.getOutputStream());
+                        }
                         break;
                     case WebSocketFrame.OP_BINARY:
                         handler.onMessage(this, frame.getPayload());
