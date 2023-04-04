@@ -183,6 +183,13 @@ public class HTTPClient {
         HTTPClientSocket socket = new HTTPClientSocket(getBaseUrl() + ((path.startsWith("/") || path.startsWith("http://") || path.startsWith("https://") || path.startsWith("ws://") || path.startsWith("wss://")) ? "" : "/") + path, !isSSLVerification());
         if(additionalHeaders != null)
             additionalHeaders.forEach(socket::setRequestHeader);
+
+        List<String> reqCookies = new ArrayList<>();
+        for(HttpCookie cookie : defaultCookies)
+            reqCookies.add(cookie.getName()+"="+cookie.getValue());
+        if (reqCookies.size() > 0)
+            socket.setRequestHeader("Cookie", String.join("; ", reqCookies));
+
         WebSocket webSocket = new WebSocket(socket, handler);
         new Thread(webSocket).start();
         return webSocket;
