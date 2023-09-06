@@ -1,7 +1,7 @@
 package org.javawebstack.httpclient;
 
-import org.javawebstack.abstractdata.AbstractMapper;
-import org.javawebstack.abstractdata.NamingPolicy;
+import org.javawebstack.abstractdata.mapper.Mapper;
+import org.javawebstack.abstractdata.mapper.naming.NamingPolicy;
 import org.javawebstack.httpclient.implementation.IHTTPRequestImplementation;
 import org.javawebstack.httpclient.implementation.JavaNetHTTPRequestImplementation;
 import org.javawebstack.httpclient.interceptor.RequestInterceptor;
@@ -16,8 +16,8 @@ import java.util.function.Supplier;
 
 public class HTTPClient {
 
-    private AbstractMapper abstractMapper = new AbstractMapper()
-            .setNamingPolicy(NamingPolicy.SNAKE_CASE);
+    private Mapper mapper = new Mapper()
+            .namingPolicy(NamingPolicy.SNAKE_CASE);
     private int timeout = 5000;
     private String baseUrl;
     private Map<String, String[]> defaultHeaders = new HashMap<>();
@@ -79,13 +79,13 @@ public class HTTPClient {
         return this.sslVerification;
     }
 
-    public HTTPClient abstractMapper(AbstractMapper mapper) {
-        this.abstractMapper = mapper;
+    public HTTPClient mapper(Mapper mapper) {
+        this.mapper = mapper;
         return this;
     }
 
-    public AbstractMapper getAbstractMapper() {
-        return abstractMapper;
+    public Mapper getMapper() {
+        return mapper;
     }
 
     public HTTPClient timeout(int timeout) {

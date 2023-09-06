@@ -111,7 +111,7 @@ public class HTTPRequest {
             return formBodyString((QueryString) object);
         if(object instanceof AbstractElement)
             return formBodyElement((AbstractElement) object);
-        return formBodyElement(client.getAbstractMapper().toAbstract(object));
+        return formBodyElement(client.getMapper().map(object));
     }
 
     public HTTPRequest formBodyElement(AbstractElement element) {
@@ -129,7 +129,7 @@ public class HTTPRequest {
     public HTTPRequest jsonBody(Object object) {
         if(object instanceof AbstractElement)
             return jsonBodyElement((AbstractElement) object);
-        return jsonBodyElement(client.getAbstractMapper().toAbstract(object));
+        return jsonBodyElement(client.getMapper().map(object));
     }
 
     public Map<String, String[]> headers() {
@@ -170,7 +170,7 @@ public class HTTPRequest {
             return (T) responseBody;
         if(type.equals(String.class))
             return (T) string();
-        return client.getAbstractMapper().fromAbstract(data(), type);
+        return client.getMapper().map(data(), type);
     }
 
     public AbstractElement data() {
