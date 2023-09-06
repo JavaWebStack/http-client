@@ -22,7 +22,7 @@ public class HTTPRequest {
     private Map<String, String[]> responseHeaders = new HashMap<>();
     private final List<HttpCookie> requestCookies = new ArrayList<>();
     private final List<HttpCookie> responseCookies = new ArrayList<>();
-    private byte[] responseBody;
+    private byte[] responseBody = new byte[0];
     private int status;
     private String statusMessage;
     private boolean executed;
